@@ -1,0 +1,435 @@
+/* Session game: a paper prototype.
+   One title, one line and one interaction per screen. Graphite for everything,
+   ochre for the room's own marks, blue for the camera, red only for AI. */
+
+.defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.play {
+  height: 100dvh;
+  max-width: 1600px;
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  padding-inline: clamp(16px, 3vw, 48px);
+  padding-block: 10px;
+  font-family: var(--font-hand);
+  color: var(--ink);
+}
+
+/* Pencil borders: HTML boxes get the same wobble as the canvas drawings. */
+.p-btn,
+.play :is(.box, .mini-panel, .curve-host, .fun, .btn) {
+  position: relative;
+  border: 0;
+  background: transparent;
+}
+
+.p-btn::before,
+.play :is(.box, .mini-panel, .curve-host, .fun, .btn)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--pb, var(--ink));
+  filter: url(#pencil);
+  pointer-events: none;
+}
+
+/* ---------- HUD ---------- */
+
+.hud {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 6px;
+}
+
+.hud::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  border-bottom: 2px solid var(--ink);
+  filter: url(#pencil);
+}
+
+.hud-level {
+  font-family: var(--font-display);
+  font-stretch: 85%;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.hud-level span {
+  color: var(--ink-2);
+}
+
+.hud-items {
+  position: relative;
+  width: 330px;
+  height: 56px;
+}
+
+.hud-clock {
+  justify-self: end;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.6rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-clock.is-low {
+  color: var(--design);
+}
+
+/* ---------- Level ---------- */
+
+.screen {
+  position: relative;
+  min-height: 0;
+}
+
+.level {
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
+  justify-items: center;
+  text-align: center;
+  padding-top: clamp(10px, 3vh, 32px);
+}
+
+.level-title {
+  margin: 0;
+  max-width: 22ch;
+  font-family: var(--font-display);
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: clamp(2rem, 4.4vw, 3.8rem);
+  line-height: 1;
+  text-wrap: balance;
+}
+
+.level--title .level-title {
+  margin-top: 3vh;
+  font-stretch: 115%;
+  font-size: clamp(2.6rem, 7vw, 6rem);
+}
+
+.level-line {
+  margin: 10px 0 0;
+  font-size: clamp(1.15rem, 1.9vw, 1.65rem);
+  color: var(--ink-2);
+}
+
+.level-line.is-done {
+  color: var(--design);
+  font-weight: 700;
+}
+
+.level-stage {
+  position: relative;
+  width: 100%;
+  min-height: 0;
+  margin-top: clamp(8px, 2vh, 22px);
+}
+
+.stage-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+/* ---------- Your page ---------- */
+
+.stage-sheet {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  text-align: left;
+}
+
+.stage-sheet .sheet {
+  width: min(100%, 1120px);
+  padding-block: 6px;
+}
+
+.play .box--feel {
+  --pb: var(--design);
+}
+
+.play .curve-host {
+  --pb: var(--ink-2);
+  height: 128px;
+}
+
+/* Keep the canvas inside its pencil border. */
+.play .curve-host .p5-host {
+  inset: 4px;
+}
+
+.play .sheet textarea,
+.play .sheet input[type='text'] {
+  font-size: 1.2rem;
+}
+
+.play .sheet .box-title b {
+  font-size: 1rem;
+}
+
+.play .fun {
+  --pb: var(--line);
+  font-family: var(--font-hand);
+  font-size: 0.95rem;
+}
+
+.play .fun[aria-pressed='true'] {
+  --pb: var(--design);
+  background: transparent;
+}
+
+.play .btn:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+}
+
+/* ---------- Buttons ---------- */
+
+.p-btn {
+  padding: 10px 18px;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-stretch: 85%;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.p-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.p-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.p-btn b {
+  margin-left: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--design);
+}
+
+.p-btn--red {
+  --pb: var(--red);
+  color: var(--red);
+}
+
+.p-btn--small {
+  padding: 4px 12px;
+  font-size: 1rem;
+}
+
+/* ---------- Boss ---------- */
+
+.boss {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.boss-canvas {
+  position: relative;
+  min-height: 0;
+}
+
+.boss-controls {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding-bottom: 6px;
+}
+
+.boss-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 10px 14px;
+}
+
+.boss-note {
+  color: var(--ink-2);
+  font-size: 1.1rem;
+}
+
+.boss-fallback {
+  width: min(100%, 820px);
+  height: 120px;
+  font: 0.8rem/1.4 var(--font-body);
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+
+/* ---------- Save file ---------- */
+
+.save {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  display: grid;
+  grid-template-rows: minmax(190px, 1fr) auto auto auto;
+  justify-items: center;
+  gap: 12px;
+}
+
+.save-canvas {
+  position: relative;
+  width: 100%;
+  min-height: 190px;
+}
+
+.quest {
+  margin: 0;
+  max-width: 56ch;
+  font-size: clamp(1.1rem, 1.7vw, 1.45rem);
+  font-weight: 700;
+}
+
+.credits {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-width: 1000px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 20px;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: var(--ink-2);
+}
+
+.credits a {
+  color: inherit;
+}
+
+.further {
+  font-family: var(--font-display);
+  font-stretch: 85%;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  color: var(--ink-2);
+}
+
+/* ---------- Footer and notes ---------- */
+
+.play-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 6px;
+}
+
+.foot-nav {
+  display: flex;
+  gap: 8px;
+}
+
+.foot-keys {
+  font-family: var(--font-display);
+  font-stretch: 85%;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.68rem;
+  color: var(--ink-2);
+}
+
+.speaker {
+  position: fixed;
+  left: 16px;
+  bottom: 60px;
+  z-index: 10;
+  max-width: min(520px, calc(100vw - 32px));
+  padding: 12px 16px;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  background: var(--panel);
+  border: 1.5px solid var(--ink-2);
+  box-shadow: 4px 4px 0 var(--line);
+}
+
+.speaker p {
+  margin: 4px 0 0;
+}
+
+.speaker-label {
+  font-family: var(--font-display);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.66rem;
+  color: var(--ink-2);
+}
+
+@media (max-width: 760px) {
+  .play {
+    height: auto;
+    min-height: 100dvh;
+  }
+
+  .hud {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .hud-items {
+    display: none;
+  }
+
+  .level-stage {
+    min-height: 62vh;
+  }
+
+  .foot-keys {
+    display: none;
+  }
+}
+
+@media print {
+  .hud,
+  .play-foot,
+  .level-title,
+  .level-line,
+  .speaker {
+    display: none !important;
+  }
+
+  .play {
+    display: block;
+    height: auto;
+    padding: 0;
+  }
+
+  .stage-sheet {
+    position: static;
+  }
+}
